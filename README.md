@@ -28,20 +28,15 @@ To create this application from scratch, follow the [Advanced Checkout integrati
 You can run this app locally or on [Stackblitz](https://stackblitz.com/edit/pp-js-node?file=README.md).
 
 #### Run it locally
-You will need to create a `.env` file with the following environment variables:
 
-```shell
-CLIENT_ID=
-APP_SECRET=
-```
-In the `checkout.ejs` replace the `YOUR_CLIENT_ID` string in the  `script` tag with your PayPal Client ID.
-
-
+- Rename the `.env.example` file to .env.
 Complete the steps in [Get started](https://developer.paypal.com/api/rest/) to get the following sandbox account information from the Developer Dashboard:
 - Sandbox client ID and the secret of [a REST app](https://www.paypal.com/signin?returnUri=https%3A%2F%2Fdeveloper.paypal.com%2Fdeveloper%2Fapplications&_ga=1.252581760.841672670.1664266268).
 - Access token to use the PayPal REST API server.
-
+- Inside the `.env` file, enter your PayPal client ID for the `PAYPAL_CLIENT_ID` and your PayPal app secret for the `PAYPAL_CLIENT_SECRET` environment variables.
 ![paypal developer credentials](env.png)
+- Run npm install in your terminal
+- In the `checkout.ejs` replace the `PAYPAL_CLIENT_ID` string in the  `script` tag with your PayPal Client ID.
 
 Now, run the following commands in your terminal:
 

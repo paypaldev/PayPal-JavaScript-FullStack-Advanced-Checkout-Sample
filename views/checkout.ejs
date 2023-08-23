@@ -8,8 +8,9 @@
       href="https://www.paypalobjects.com/webstatic/en_US/developer/docs/css/cardfields.css"
     />
     <script
-      src="https://www.paypal.com/sdk/js?components=buttons,hosted-fields&client-id=YOUR_CLIENT_ID&enable-funding=venmo,paylater"
+      src="https://www.paypal.com/sdk/js?components=buttons,hosted-fields&client-id=PAYPAL_CLIENT_ID&enable-funding=venmo,paylater"
       data-client-token="<%= clientToken %>"
+      data-sdk-integration-source="integrationbuilder_ac"
     ></script>
   </head>
   <body>
@@ -63,6 +64,7 @@
         <br /><br />
         <button value="submit" id="submit" class="btn">Pay</button>
       </form>
+      <p id="result-message"></p>
     </div>
     <script src="app.js"></script>
   </body>

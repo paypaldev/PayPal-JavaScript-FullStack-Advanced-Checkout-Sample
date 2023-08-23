@@ -28,7 +28,7 @@ function handleTransactionCases(orderData) {
     }
 }
 
-async function onCreateOrder(data, actions) {
+async function onCreateOrder() {
   try {
     const response = await fetch("/api/orders", {
       method: "POST",
@@ -67,11 +67,9 @@ async function onCreateOrder(data, actions) {
   }
 }
 
-async function onCaptureOrder(data, actions, orderID) {
-  const orderId = data ? data.orderID : orderID;
-  
+async function onCaptureOrder(orderID) { 
   try {
-    const response = await fetch(`/api/orders/${orderId}/capture`, {
+    const response = await fetch(`/api/orders/${orderID}/capture`, {
       method: "POST",
       headers: {
         'Content-Type': 'application/json',
@@ -103,8 +101,8 @@ paypal.Buttons({
     // color:'blue' change the default color of the buttons
     layout: 'vertical', // default value. Can be changed to horizontal
   },
-    createOrder: async (data, actions) => onCreateOrder(data, actions),
-    onApprove: async (data, actions) => onCaptureOrder (data, actions, null),
+    createOrder: onCreateOrder,
+    onApprove: async (data) => onCaptureOrder (data.orderID),
   })
   .render("#paypal-button-container");
 
@@ -157,7 +155,7 @@ if (paypal.HostedFields.isEligible()) {
             },
           });
 
-          await onCaptureOrder (null, null, orderId);
+          await onCaptureOrder (orderId);
         } catch (error) {
           alert("Payment could not be captured! " + JSON.stringify(error));
         }
