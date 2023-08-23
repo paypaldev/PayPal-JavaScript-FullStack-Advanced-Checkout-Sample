@@ -1,45 +1,69 @@
-const FUNDING_SOURCES = [
-  paypal.FUNDING.PAYPAL,
-  paypal.FUNDING.PAYLATER,
-  paypal.FUNDING.VENMO,
-];
-
-function handleTransactionCases(details) {
-  // Three cases to handle:
-  //    (1) Recoverable INSTRUMENT_DECLINED -> call actions.restart()
-  //    (2) Other non-recoverable errors -> Show a failure message
-  //    (3) Successful transaction -> Show confirmation or thank you message
-
-  // This example reads a v2/checkout/orders capture response, propagated from the server
-  // You could use a different API or structure for your 'orderData'
-  const errorDetail = Array.isArray(details.details) && details.details[0];
-
-  if (errorDetail && errorDetail.issue === "INSTRUMENT_DECLINED") {
+function handleTransactionCases(orderData) {
+  const errorDetail = orderData?.details?.[0];
+  if (errorDetail?.issue === 'INSTRUMENT_DECLINED') {
+    // (1) Recoverable INSTRUMENT_DECLINED -> call actions.restart()
+    // recoverable state, per https://developer.paypal.com/docs/checkout/standard/customize/handle-funding-failures/
     return actions.restart();
-    // https://developer.paypal.com/docs/checkout/integration-features/funding-failure/
+  } else if (errorDetail) {
+    // (2) Other non-recoverable errors -> Show a failure message
+    throw new Error(
+      `${errorDetail.description} (${orderData.debug_id})`,
+    );
+  } else if (!orderData.purchase_units) {
+    throw new Error(JSON.stringify(orderData));
   }
-
-  if (errorDetail) {
-    let msg = "Sorry, your transaction could not be processed.";
-    msg += errorDetail.description ? " " + errorDetail.description : "";
-    msg += details.debug_id ? " (" + details.debug_id + ")" : "";
-    alert(msg);
-  }
-
-  const transaction = details.purchase_units[0].payments.captures[0];
-  alert("Transaction " + transaction.status + ": " + transaction.id + ". See console for all available details");
+  else {
+    // (3) Successful transaction -> Show confirmation or thank you message
+    // Or go to another URL:  actions.redirect('thank_you.html');
+    const transaction =
+      orderData.purchase_units[0].payments.captures[0];
+    resultMessage(
+        `<h3>Transaction ${transaction.status}: ${transaction.id}<br><br>See console for all available details</h3>`,
+      );
+      console.log(
+        'Capture result',
+        orderData,
+        JSON.stringify(orderData, null, 2),
+      );
+    }
 }
 
 async function onCreateOrder(data, actions) {
   try {
     const response = await fetch("/api/orders", {
       method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // use the "body" param to optionally pass additional order information
+      // like product ids and quantities
+      body: JSON.stringify({
+        cart: [
+          {
+            id: 'YOUR_PRODUCT_ID',
+            quantity: 'YOUR_PRODUCT_QUANTITY',
+          },
+        ],
+      }),
     });
 
-    const details = await response.json();
-    return details.id;
+    const orderData = await response.json();
+
+    if (orderData.id) {
+      return orderData.id;
+    } else {
+      const errorDetail = orderData?.details?.[0];
+      const errorMessage = errorDetail
+        ? `${errorDetail.issue} ${errorDetail.description} (${orderData.debug_id})`
+        : JSON.stringify(orderData);
+
+      throw new Error(errorMessage);
+    }
   } catch (error) {
     console.error(error);
+    resultMessage(
+      `Could not initiate PayPal Checkout...<br><br>${error}`,
+    );
   }
 }
 
@@ -49,29 +73,40 @@ async function onCaptureOrder(data, actions, orderID) {
   try {
     const response = await fetch(`/api/orders/${orderId}/capture`, {
       method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
-    const details = await response.json();
-    handleTransactionCases(details);
+    const orderData = await response.json();
+    handleTransactionCases(orderData);
   } catch (error) {
     console.error(error);
   }
 }
 
+/*
+Example function to show a result to the user. Your site's UI library can be used instead,
+however alert() should not be used as it will interrupt the JS SDK window
+*/
 
-FUNDING_SOURCES.forEach((fundingSource) => {
-  paypal.Buttons({
-      fundingSource,
-      style: {
-        layout: "vertical",
-        shape: "rect",
-        color: fundingSource === paypal.FUNDING.PAYLATER ? "gold" : "",
-      },
-      createOrder: async (data, actions) => onCreateOrder(data, actions),
-      onApprove: async (data, actions) => onCaptureOrder (data, actions, null),
-    })
-    .render("#paypal-button-container");
-});
+function resultMessage(message) {
+  const container = document.getElementById('paypal-button-container');
+  const p = document.createElement('p');
+  p.innerHTML = message;
+  container.parentNode.appendChild(p);
+}
+
+paypal.Buttons({
+    style: {
+    shape: 'rect',
+    // color:'blue' change the default color of the buttons
+    layout: 'vertical', // default value. Can be changed to horizontal
+  },
+    createOrder: async (data, actions) => onCreateOrder(data, actions),
+    onApprove: async (data, actions) => onCaptureOrder (data, actions, null),
+  })
+  .render("#paypal-button-container");
 
 // If this returns false or the card fields aren't visible, see Step #1.
 if (paypal.HostedFields.isEligible()) {
@@ -128,7 +163,7 @@ if (paypal.HostedFields.isEligible()) {
         }
       });
   });
-} else {
-  // Hides card fields if the merchant isn't eligible
-  document.querySelector("#card-form").style = "display: none";
+// } else {
+//   // Hides card fields if the merchant isn't eligible
+//   document.querySelector("#card-form").style = "display: none";
 }
