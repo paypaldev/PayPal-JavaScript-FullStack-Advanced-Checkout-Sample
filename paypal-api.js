@@ -47,7 +47,7 @@ export async function capturePayment(orderId) {
   const accessToken = await generateAccessToken();
   const url = `${base}/v2/checkout/orders/${orderId}/capture`;
   const response = await fetch(url, {
-    method: "post",
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
