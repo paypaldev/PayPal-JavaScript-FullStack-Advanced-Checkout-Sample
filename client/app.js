@@ -1,4 +1,5 @@
 async function createOrderCallback() {
+  resultMessage("");
   try {
     const response = await fetch("/api/orders", {
       method: "POST",
