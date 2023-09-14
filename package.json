@@ -1,7 +1,7 @@
 {
   "name": "paypal-js-advanced-integration-ib",
   "description": "Sample Node.js web app to integrate PayPal Advanced Checkout for online payments",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "server/server.js",
   "type": "module",
   "scripts": {
